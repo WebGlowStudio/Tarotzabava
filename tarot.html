@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tarot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0f0c1a;
+    --indigo:#1c1730;
+    --indigo-2:#241d3d;
+    --gold:#3ce3ff;
+    --gold-soft:#1f9fc4;
+    --wine:#0f2a52;
+    --glow:0 0 10px rgba(60,227,255,.55);
+    --cream:#e9e2d3;
+    --cream-dim:#b8b0a0;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(ellipse at 50% 0%, var(--indigo-2), var(--ink) 70%);
+    font-family:'Jost', sans-serif;
+    color:var(--cream);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:44px 16px 80px;
+  }
+  .stars{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:0;
+    overflow:hidden;
+  }
+  .star{
+    position:absolute;
+    background:#dff6ff;
+    border-radius:50%;
+    box-shadow:0 0 6px 1px rgba(60,227,255,.8);
+    animation:twinkle 3.5s ease-in-out infinite;
+  }
+  @keyframes twinkle{
+    0%, 100%{opacity:.15; transform:scale(.8);}
+    50%{opacity:1; transform:scale(1.15);}
+  }
+  header, .controls, .table-wrap, .draw-btn, .hint, .reading, .history{
+    position:relative;
+    z-index:1;
+    width:100%;
+    display:flex;
+    justify-content:center;
+  }
+  header{
+    text-align:center;
+    flex-direction:column;
+    align-items:center;
+    max-width:520px;
+    margin-bottom:26px;
+  }
+  h1{
+    font-family:'Cormorant Garamond', serif;
+    font-weight:600;
+    font-size:clamp(2.2rem, 6vw, 3.2rem);
+    letter-spacing:.04em;
+    margin:0 0 10px;
+    color:var(--cream);
+    text-shadow:var(--glow);
+  }
+  header p{
+    font-size:.92rem;
+    line-height:1.6;
+    color:var(--cream-dim);
+    margin:0;
+    font-weight:300;
+  }
+  .question-wrap{
+    width:100%;
+    max-width:420px;
+    margin:22px auto 6px;
+  }
+  .question-wrap input{
+    width:100%;
+    background:rgba(233,226,211,.06);
+    border:1px solid rgba(198,161,91,.25);
+    border:1px solid rgba(60,227,255,.3);
+    border-radius:8px;
+    padding:11px 14px;
+    color:var(--cream);
+    font-family:'Cormorant Garamond', serif;
+    font-style:italic;
+    font-size:1.05rem;
+    text-align:center;
+  }
+  .question-wrap input::placeholder{color:var(--cream-dim); opacity:.6;}
+  .question-wrap input:focus{outline:none; border-color:var(--gold);}
+  .controls{
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
+    margin-bottom:30px;
+  }
+  .mode-toggle{
+    display:flex;
+    gap:2px;
+    flex-wrap:wrap;
+    justify-content:center;
+    background:rgba(233,226,211,.06);
+    border:1px solid rgba(60,227,255,.28);
+    border-radius:999px;
+    padding:4px;
+  }
+  .mode-toggle button{
+    border:none;
+    background:transparent;
+    color:var(--cream-dim);
+    font-family:'Jost',sans-serif;
+    font-size:.82rem;
+    letter-spacing:.02em;
+    padding:8px 16px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:background .25s ease, color .25s ease;
+    white-space:nowrap;
+  }
+  .mode-toggle button.active{
+    background:var(--gold);
+    color:var(--ink);
+  }
+  .sound-btn{
+    border:1px solid rgba(60,227,255,.35);
+    background:transparent;
+    color:var(--cream-dim);
+    font-family:'Jost',sans-serif;
+    font-size:.8rem;
+    padding:8px 16px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:color .2s ease, border-color .2s ease;
+  }
+  .sound-btn.active{
+    color:var(--gold);
+    border-color:var(--gold);
+    text-shadow:var(--glow);
+  }
+  .table-wrap{
+    max-width:920px;
+    overflow-x:auto;
+    padding-bottom:6px;
+  }
+  .table{
+    display:flex;
+    gap:24px;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin:0 auto;
+  }
+  .slot{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:12px;
+  }
+  .slot-label{
+    color:var(--gold-soft);
+    font-style:italic;
+    font-family:'Cormorant Garamond', serif;
+    font-size:1rem;
+    min-height:1.3em;
+    text-align:center;
+    max-width:110px;
+  }
+  .card{
+    width:160px;
+    height:262px;
+    perspective:1400px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .card.mini{
+    width:86px;
+    height:142px;
+  }
+  .card-inner{
+    position:relative;
+    width:100%;
+    height:100%;
+    transition:transform .9s cubic-bezier(.34,1.2,.4,1);
+    transform-style:preserve-3d;
+  }
+  .card.flipped .card-inner{
+    transform:rotateY(180deg);
+  }
+  .card-face{
+    position:absolute;
+    inset:0;
+    border-radius:9px;
+    backface-visibility:hidden;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    border:1px solid var(--gold-soft);
+    box-shadow:0 10px 26px rgba(0,0,0,.45);
+    overflow:hidden;
+    transition:box-shadow .6s ease;
+  }
+  .card-back{
+    background:
+      repeating-linear-gradient(45deg, rgba(60,227,255,.1) 0 2px, transparent 2px 14px),
+      linear-gradient(160deg, var(--wine), var(--indigo));
+  }
+  .card-back::before{
+    content:"";
+    width:56px;
+    height:56px;
+    border:1px solid var(--gold);
+    border-radius:50%;
+    position:absolute;
+  }
+  .card.mini .card-back::before{width:32px;height:32px;}
+  .card-back::after{
+    content:"";
+    width:84px;
+    height:84px;
+    border:1px solid rgba(60,227,255,.5);
+    transform:rotate(45deg);
+    position:absolute;
+  }
+  .card.mini .card-back::after{width:48px;height:48px;}
+  .moon{
+    position:absolute;
+    width:70px;
+    height:70px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' style='overflow:visible'%3E%3Cdefs%3E%3ClinearGradient id='pg' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff6fd8'/%3E%3Cstop offset='1' stop-color='%23b5197a'/%3E%3C/linearGradient%3E%3Cfilter id='g' x='-60%25' y='-60%25' width='220%25' height='220%25'%3E%3CfeDropShadow dx='1.5' dy='2.5' stdDeviation='1.2' flood-color='%233a0620' flood-opacity='0.65' result='shaded'/%3E%3CfeGaussianBlur in='shaded' stdDeviation='4' result='blur'/%3E%3CfeMerge%3E%3CfeMergeNode in='blur'/%3E%3CfeMergeNode in='shaded'/%3E%3C/feMerge%3E%3C/filter%3E%3Cmask id='m'%3E%3Ccircle cx='50' cy='50' r='28' fill='white'/%3E%3Ccircle cx='61' cy='41' r='24' fill='black'/%3E%3C/mask%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='28' fill='url(%23pg)' mask='url(%23m)' filter='url(%23g)'/%3E%3C/svg%3E");
+    background-size:contain;
+    background-repeat:no-repeat;
+    background-position:center;
+    z-index:1;
+  }
+  .card.mini .moon{width:38px;height:38px;}
+  .card-front{
+    background:linear-gradient(180deg, #221b3a, #17132a);
+    transform:rotateY(180deg);
+    padding:12px 8px 10px;
+    text-align:center;
+  }
+  .card.flipped .card-front{
+    box-shadow:0 10px 26px rgba(0,0,0,.45), 0 0 20px rgba(60,227,255,.35);
+    border-color:var(--gold);
+  }
+  .card-front.reversed .sigil-wrap{
+    transform:rotate(180deg);
+  }
+  .numeral{
+    font-family:'Cormorant Garamond', serif;
+    font-style:italic;
+    font-size:.8rem;
+    color:var(--gold-soft);
+    letter-spacing:.05em;
+  }
+  .card.mini .numeral{font-size:.62rem;}
+  .sigil-wrap{
+    width:80px;
+    height:80px;
+    margin:4px 0 3px;
+  }
+  .card.mini .sigil-wrap{width:40px;height:40px;margin:2px 0;}
+  .card-name{
+    font-family:'Cormorant Garamond', serif;
+    font-weight:600;
+    font-size:1.15rem;
+    line-height:1.15;
+    color:var(--cream);
+  }
+  .card.mini .card-name{font-size:.68rem; line-height:1.1;}
+  .orientation-tag{
+    font-size:.65rem;
+    letter-spacing:.06em;
+    color:var(--gold);
+    font-style:italic;
+    margin-top:2px;
+  }
+  .card.mini .orientation-tag{font-size:.52rem;}
+
+  .celtic-grid{
+    display:grid;
+    grid-template-columns: 96px 96px 96px 30px 96px;
+    grid-template-rows: repeat(4, auto);
+    grid-template-areas:
+      "e1 crown e2 g s4"
+      "past center future g s3"
+      "e3 base e4 g s2"
+      "e5 e6 e7 g s1";
+    gap:14px;
+    align-items:center;
+    justify-items:center;
+    padding:6px 10px 14px;
+  }
+  .pos-5{grid-area:crown;}
+  .pos-4{grid-area:past;}
+  .pos-6{grid-area:future;}
+  .pos-3{grid-area:base;}
+  .pos-1{grid-area:center; z-index:1;}
+  .pos-2{grid-area:center; z-index:2; transform:rotate(90deg) scale(.82);}
+  .pos-2.flipped .card-inner{transform:rotateY(180deg);}
+  .pos-7{grid-area:s1;}
+  .pos-8{grid-area:s2;}
+  .pos-9{grid-area:s3;}
+  .pos-10{grid-area:s4;}
+
+  .reading{
+    max-width:640px;
+    flex-direction:column;
+    margin-top:38px;
+    display:none;
+  }
+  .reading.show{display:flex;}
+  .reading-question{
+    font-family:'Cormorant Garamond', serif;
+    font-style:italic;
+    color:var(--gold-soft);
+    text-align:center;
+    font-size:1.05rem;
+    margin:0 0 18px;
+  }
+  .reading-card{
+    border-top:1px solid rgba(60,227,255,.22);
+    padding:16px 0;
+  }
+  .reading-card:first-child{border-top:none;}
+  .reading-title{
+    font-family:'Cormorant Garamond', serif;
+    font-size:1.28rem;
+    color:var(--gold);
+    margin:0 0 6px;
+  }
+  .reading-title .pos{
+    color:var(--cream-dim);
+    font-style:italic;
+    font-size:.95rem;
+    margin-right:8px;
+  }
+  .reading-text{
+    font-size:.9rem;
+    line-height:1.6;
+    color:var(--cream-dim);
+    font-weight:300;
+    margin:0;
+  }
+  .draw-btn{
+    margin-top:36px;
+    background:transparent;
+    border:1px solid var(--gold);
+    color:var(--gold);
+    font-family:'Cormorant Garamond', serif;
+    font-size:1.05rem;
+    letter-spacing:.02em;
+    padding:12px 34px;
+    border-radius:2px;
+    cursor:pointer;
+    transition:background .3s ease, color .3s ease;
+  }
+  .draw-btn:hover:not(:disabled){
+    background:var(--gold);
+    color:var(--ink);
+    box-shadow:var(--glow);
+  }
+  .draw-btn:disabled{opacity:.4; cursor:default;}
+  .download-btn{
+    margin-top:16px;
+    background:transparent;
+    border:1px solid rgba(60,227,255,.4);
+    color:var(--cream-dim);
+    font-family:'Jost',sans-serif;
+    font-size:.8rem;
+    padding:9px 20px;
+    border-radius:999px;
+    cursor:pointer;
+    display:none;
+  }
+  .download-btn.show{display:inline-block;}
+  .download-btn:hover{color:var(--gold); border-color:var(--gold);}
+  .hint{
+    margin-top:12px;
+    font-size:.76rem;
+    color:var(--cream-dim);
+    opacity:.7;
+    font-style:italic;
+    font-family:'Cormorant Garamond', serif;
+    min-height:1.2em;
+    text-align:center;
+  }
+  .history{
+    flex-direction:column;
+    align-items:center;
+    max-width:640px;
+    margin-top:44px;
+  }
+  .history h2{
+    font-family:'Cormorant Garamond', serif;
+    font-weight:600;
+    font-style:italic;
+    font-size:1.1rem;
+    color:var(--gold-soft);
+    margin:0 0 4px;
+  }
+  .history-note{
+    font-size:.72rem;
+    color:var(--cream-dim);
+    opacity:.6;
+    margin:0 0 12px;
+    text-align:center;
+  }
+  .history-chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    justify-content:center;
+  }
+  .chip{
+    font-size:.74rem;
+    border:1px solid rgba(60,227,255,.3);
+    color:var(--cream-dim);
+    padding:5px 12px;
+    border-radius:999px;
+  }
+  .clear-history{
+    margin-top:14px;
+    background:none;
+    border:none;
+    color:var(--cream-dim);
+    text-decoration:underline;
+    font-size:.74rem;
+    cursor:pointer;
+    opacity:.7;
+  }
+  .clear-history:hover{opacity:1; color:var(--gold);}
+  @media (prefers-reduced-motion: reduce){
+    .card-inner{transition:none;}
+  }
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+
+<header>
+  <h1>Tarot</h1>
+  <p>Umiri misli, postavi pitanje u glavi i izvuci kartu kada osetiš da je trenutak pravi.</p>
+</header>
+
+<div class="question-wrap">
+  <input type="text" id="question" placeholder="Šta te zanima? (opciono)" maxlength="90">
+</div>
+
+<div class="controls">
+  <div class="mode-toggle">
+    <button data-mode="1" class="active">Jedna karta</button>
+    <button data-mode="3">Tri karte</button>
+    <button data-mode="10">Keltski krst</button>
+    <button data-mode="daily">Karta dana</button>
+  </div>
+  <button class="sound-btn" id="sound-btn">🔈 Zvuk isključen</button>
+</div>
+
+<div class="table-wrap"><div class="table" id="table"></div></div>
+
+<button class="draw-btn" id="draw-btn">Izvuci kartu</button>
+<button class="download-btn" id="download-btn">Preuzmi karticu</button>
+<div class="hint" id="hint"></div>
+
+<div class="reading" id="reading"></div>
+
+<div class="history" id="history-wrap" style="display:none">
+  <h2>Istorija ove sesije</h2>
+  <p class="history-note">Čuva se dok je stranica otvorena — nestaje kad je osvežiš.</p>
+  <div class="history-chips" id="history-chips"></div>
+  <button class="clear-history" id="clear-history">obriši istoriju</button>
+</div>
+
+<script>
+/* ---------- Podaci: 22 velike + 56 male arkane = 78 karata ---------- */
+
+const MAJOR_RAW = [
+  {n:'0', name:'Luda', up:'Nov početak, skok u nepoznato, spontanost i poverenje u put pred tobom.', rev:'Nepromišljenost ili strah koji te sprečava da napraviš prvi korak.'},
+  {n:'I', name:'Mag', up:'Imaš sve alate koji su ti potrebni — volja i namera pretvaraju ideju u stvarnost.', rev:'Rasuta energija, manipulacija ili talenat koji se ne koristi kako treba.'},
+  {n:'II', name:'Sveštenica', up:'Unutrašnji glas zna više od logike. Vreme je za tišinu i intuiciju.', rev:'Skrivene informacije, prekinuta veza sa sobom, ignorisanje predosećaja.'},
+  {n:'III', name:'Carica', up:'Obilje, plodnost, briga o sebi i drugima, stvaranje nečeg lepog.', rev:'Zapostavljanje sopstvenih potreba, blokada u kreativnosti ili preterana zavisnost od drugih.'},
+  {n:'IV', name:'Car', up:'Struktura, autoritet, stabilnost izgrađena disciplinom i jasnim granicama.', rev:'Kruta kontrola, tvrdoglavost ili gubitak osećaja sigurnosti.'},
+  {n:'V', name:'Jerarh', up:'Tradicija, učenje od mentora, poštovanje pravila koja imaju smisla.', rev:'Pobuna protiv konvencija ili slepo praćenje pravila bez razmišljanja.'},
+  {n:'VI', name:'Ljubavnici', up:'Izbor iz srca, sklad, duboka povezanost i usklađene vrednosti.', rev:'Neusklađenost, težak izbor ili neiskrenost u odnosu.'},
+  {n:'VII', name:'Kola', up:'Odlučnost i fokus vode te napred uprkos suprotnim silama.', rev:'Gubitak pravca, sukobljene namere, potreba da usporiš i preusmeriš.'},
+  {n:'VIII', name:'Snaga', up:'Nežna, strpljiva snaga — hrabrost koja dolazi iz samilosti, ne iz sile.', rev:'Sumnja u sebe, nedostatak samopouzdanja ili potiskivan bes.'},
+  {n:'IX', name:'Pustinjak', up:'Povlačenje radi razmišljanja, traženje odgovora u tišini, unutrašnja mudrost.', rev:'Izolacija koja je postala usamljenost, izbegavanje sveta duže nego što treba.'},
+  {n:'X', name:'Točak sreće', up:'Ciklusi se menjaju, sudbina okreće stranicu, dolazi period preokreta.', rev:'Otpor promeni, osećaj da si zaglavljen u lošoj fazi ciklusa.'},
+  {n:'XI', name:'Pravda', up:'Ravnoteža, istina koja izlazi na videlo, posledice koje su fer.', rev:'Nepravda, izbegavanje odgovornosti ili nepošteno rasuđivanje.'},
+  {n:'XII', name:'Obešeni čovek', up:'Predaja, drugačija perspektiva, mirenje sa pauzom koja nešto uči.', rev:'Otezanje, žrtvovanje bez svrhe, osećaj zarobljenosti.'},
+  {n:'XIII', name:'Smrt', up:'Kraj jedne faze da bi počela druga — transformacija, ne doslovan kraj.', rev:'Otpor promeni, strah od puštanja onoga što je već prošlo.'},
+  {n:'XIV', name:'Umerenost', up:'Strpljenje, mešanje krajnosti u sklad, postepen i staložen napredak.', rev:'Neravnoteža, žurba ili preterivanje koje narušava sklad.'},
+  {n:'XV', name:'Đavo', up:'Suočavanje sa navikama koje te vežu, iskušenje ili opsesija.', rev:'Oslobađanje okova, prekid štetnog obrasca, povraćena kontrola.'},
+  {n:'XVI', name:'Kula', up:'Nagla, otrežnjujuća promena koja ruši ono što nije bilo stabilno.', rev:'Izbegavanje neizbežnog raspada ili strah od nadolazeće promene.'},
+  {n:'XVII', name:'Zvezda', up:'Nada, obnovljena vera u budućnost, mir posle teškog perioda.', rev:'Obeshrabrenost, gubitak vere, osećaj da je nada daleko.'},
+  {n:'XVIII', name:'Mesec', up:'Nesvesno, iluzije i strahovi izranjaju na površinu, intuicija u magli.', rev:'Razjašnjenje zabune, izlazak iz konfuzije, istina posle nesigurnosti.'},
+  {n:'XIX', name:'Sunce', up:'Radost, jasnoća, uspeh i vitalnost bez skrivenih namera.', rev:'Privremeno pomračena sreća, nerealna očekivanja ili odlagana radost.'},
+  {n:'XX', name:'Sud', up:'Buđenje, poziv da preispitaš prošlost i kreneš ka obnovi.', rev:'Samokritičnost, oklevanje da odgovoriš na poziv na promenu.'},
+  {n:'XXI', name:'Svet', up:'Zaokruženje, ispunjenje cilja, osećaj celovitosti posle dugog puta.', rev:'Nedovršenost, kašnjenje u zatvaranju kruga, blizu si ali još ne tu.'}
+];
+
+const SUITS = [
+  {key:'pehari', label:'Pehara', shape:'circle'},
+  {key:'stapovi', label:'Štapova', shape:'triangle'},
+  {key:'macevi', label:'Mačeva', shape:'line'},
+  {key:'pentakli', label:'Pentakla', shape:'pentagon'}
+];
+const NUM_NAMES = ['As','Dvojka','Trojka','Četvorka','Petica','Šestica','Sedmica','Osmica','Devetka','Desetka'];
+const COURT_NAMES = ['Paž','Vitez','Kraljica','Kralj'];
+
+const SUIT_MEANINGS = {
+  pehari: [
+    {up:'Novo osećanje, otvoreno srce, emotivni početak.', rev:'Potisnuta osećanja, emotivna praznina.'},
+    {up:'Uzajamna veza, partnerstvo, emotivna ravnoteža.', rev:'Neusklađenost, prekid komunikacije u vezi.'},
+    {up:'Slavlje, prijateljstvo, zajednička radost.', rev:'Ogovaranje, površne veze, izostavljenost.'},
+    {up:'Apatija, propuštena prilika koja stoji ispred tebe.', rev:'Buđenje iz ravnodušnosti, nova prilika se prihvata.'},
+    {up:'Žaljenje, fokus na gubitak umesto na ono što ostaje.', rev:'Prihvatanje gubitka, pomirenje sa prošlošću.'},
+    {up:'Nostalgija, uspomene iz detinjstva, nevina radost.', rev:'Zaglavljenost u prošlosti, idealizovanje onoga što je bilo.'},
+    {up:'Mnogo opcija, maštanje, potreba za jasnoćom izbora.', rev:'Konfuzija se razjašnjava, jasan izbor posle neodlučnosti.'},
+    {up:'Odlazak radi nečeg dubljeg, napuštanje onoga što više ne ispunjava.', rev:'Strah od promene, ostajanje iz navike.'},
+    {up:'Zadovoljstvo, emotivno ispunjenje, želje se ostvaruju.', rev:'Površno zadovoljstvo, prazna udobnost.'},
+    {up:'Emotivno ispunjenje, sklad u porodici i domu.', rev:'Razjedinjenost, nesklad između ideala i stvarnosti.'},
+    {up:'Radoznalo srce, emotivna poruka ili novo interesovanje.', rev:'Nezrelost u osećanjima, emotivna nesigurnost.'},
+    {up:'Romantika, poziv da slediš srce, šarmantan pristup.', rev:'Nerealna očekivanja, raspoloženje koje se brzo menja.'},
+    {up:'Emotivna zrelost, saosećanje, intuitivna nega drugih.', rev:'Preplavljenost tuđim emocijama, zanemarivanje sebe.'},
+    {up:'Emotivna staloženost, mudro i smireno vođstvo srcem.', rev:'Emotivna hladnoća ili manipulacija osećanjima.'}
+  ],
+  stapovi: [
+    {up:'Iskra inspiracije, novi poduhvat, kreativna energija.', rev:'Odlaganje, nedostatak motivacije da počneš.'},
+    {up:'Planiranje budućnosti, širi pogled, prvi koraci ka cilju.', rev:'Strah od nepoznatog, oklevanje da napraviš potez.'},
+    {up:'Ekspanzija, gledanje unapred, plodovi ranijeg truda na vidiku.', rev:'Prepreke u planovima, kašnjenje u napretku.'},
+    {up:'Proslava, stabilnost, osećaj pripadanja i doma.', rev:'Nestabilnost u temeljima, odložena proslava.'},
+    {up:'Sukob mišljenja, zdrava konkurencija, tenzija koja podstiče rast.', rev:'Izbegavanje sukoba ili nepotreban spor.'},
+    {up:'Pobeda, priznanje, uspeh posle truda.', rev:'Pad ega, odloženo priznanje, sumnja u sopstveni uspeh.'},
+    {up:'Odbrana svog stava, izdržljivost pred izazovima.', rev:'Osećaj preplavljenosti, popuštanje pod pritiskom.'},
+    {up:'Brzina, nagli razvoj događaja, vesti koje stižu.', rev:'Usporavanje, frustracija zbog kašnjenja.'},
+    {up:'Izdržljivost, oprez izgrađen iskustvom, blizu si cilja.', rev:'Iscrpljenost, paranoja ili tvrdoglav otpor pomoći.'},
+    {up:'Preopterećenost odgovornošću, nošenje tereta blizu cilja.', rev:'Delegiranje ili puštanje tereta koji više nije tvoj.'},
+    {up:'Entuzijazam za novu ideju, radoznalost i istraživanje.', rev:'Nesigurnost u pravcu, plan bez akcije.'},
+    {up:'Impulsivna akcija, strast i hrabar pokret napred.', rev:'Nestrpljenje, ishitrene odluke bez plana.'},
+    {up:'Samopouzdanje, harizma, hrabrost da ideš za svojim.', rev:'Ljubomora ili gubitak samopouzdanja.'},
+    {up:'Vizionarsko vođstvo, hrabrost da preuzmeš rizik.', rev:'Impulsivnost u vođstvu, nametanje volje drugima.'}
+  ],
+  macevi: [
+    {up:'Jasnoća uma, istina, nova ideja koja seče kroz konfuziju.', rev:'Zbrka misli, ideja koja se pogrešno shvata.'},
+    {up:'Teška odluka, ravnoteža između dve opcije.', rev:'Odlaganje odluke, informacije koje se izbegavaju.'},
+    {up:'Bol, razočaranje, srce suočeno sa istinom.', rev:'Oporavak od boli, praštanje koje počinje.'},
+    {up:'Odmor, pauza za oporavak uma i tela.', rev:'Iscrpljenost zbog nedostatka odmora, prinudni predah.'},
+    {up:'Pobeda po svaku cenu, sukob bez pravih pobednika.', rev:'Pomirenje, puštanje starog sukoba.'},
+    {up:'Prelazak u mirnije vode, udaljavanje od teškoća.', rev:'Otpor promeni, zaglavljenost u nemirnoj situaciji.'},
+    {up:'Prevara, tajni potez, oslanjanje na lukavstvo.', rev:'Priznanje, savest koja izlazi na videlo.'},
+    {up:'Osećaj zarobljenosti, ograničenja koja su uglavnom mentalna.', rev:'Oslobađanje od sopstvenih ograničavajućih misli.'},
+    {up:'Anksioznost, noćna briga, strahovi koji rastu u tišini.', rev:'Olakšanje posle perioda brige, svetlost posle tamne noći.'},
+    {up:'Bolan kraj, dno posle kojeg sledi samo oporavak.', rev:'Sporo ozdravljenje, otpor prihvatanju kraja.'},
+    {up:'Radoznao um, potreba za znanjem, oprezna komunikacija.', rev:'Ogovaranje, nepromišljene reči.'},
+    {up:'Brza akcija vođena umom, direktan i odlučan pristup.', rev:'Nepromišljenost, agresivnost bez razmišljanja o posledicama.'},
+    {up:'Oštra jasnoća, iskrenost bez uvijanja, nezavisan um.', rev:'Hladnoća, oštrina koja povređuje.'},
+    {up:'Intelektualni autoritet, jasno i pravedno rasuđivanje.', rev:'Hladna proračunatost, zloupotreba moći uma.'}
+  ],
+  pentakli: [
+    {up:'Nova prilika, materijalni početak, seme koje vredi posaditi.', rev:'Propuštena prilika, loše planirana investicija.'},
+    {up:'Žongliranje obavezama, prilagodljivost promenama.', rev:'Neravnoteža, previše obaveza odjednom.'},
+    {up:'Timski rad, veština koja se gradi zajedničkim trudom.', rev:'Neusklađenost tima, nedostatak saradnje.'},
+    {up:'Sigurnost, čuvanje onoga što si stekao.', rev:'Škrtost ili strah od gubitka kontrole.'},
+    {up:'Materijalna ili emotivna nestašica, osećaj isključenosti.', rev:'Oporavak posle teškog perioda, pomoć koja stiže.'},
+    {up:'Velikodušnost, davanje i primanje u ravnoteži.', rev:'Nejednaka razmena, dug koji stvara neravnotežu.'},
+    {up:'Strpljenje, procena uloženog truda, čekanje plodova.', rev:'Nestrpljenje, sumnja u isplativost truda.'},
+    {up:'Posvećenost zanatu, usavršavanje veštine kroz rad.', rev:'Površan rad, nedostatak fokusa na kvalitet.'},
+    {up:'Samostalnost, uživanje u plodovima sopstvenog truda.', rev:'Prezaposlenost, izolacija zarad uspeha.'},
+    {up:'Nasleđe, dugoročna stabilnost, porodično bogatstvo.', rev:'Finansijska nestabilnost, porodični sukob oko nasleđa.'},
+    {up:'Nova prilika za učenje, praktična radoznalost.', rev:'Nerealni planovi, odlaganje učenja.'},
+    {up:'Pouzdanost, metodičan rad ka dugoročnom cilju.', rev:'Tvrdoglavost, stagnacija zbog straha od rizika.'},
+    {up:'Praktična briga, spoj udobnosti i produktivnosti.', rev:'Zanemarivanje sebe zbog brige o drugima.'},
+    {up:'Materijalni uspeh, pouzdanost i velikodušna stabilnost.', rev:'Pohlepa ili opsesija materijalnim.'}
+  ]
+};
+
+let idCounter = 0;
+const MAJOR_ARCANA = MAJOR_RAW.map(c => ({...c, id:idCounter++, suit:'major'}));
+
+const MINOR_ARCANA = [];
+SUITS.forEach(suit => {
+  const meanings = SUIT_MEANINGS[suit.key];
+  for(let i=0;i<10;i++){
+    MINOR_ARCANA.push({
+      id:idCounter++, suit:suit.key, shape:suit.shape,
+      n:(i+1)+' / '+suit.label, name:NUM_NAMES[i]+' '+suit.label,
+      up:meanings[i].up, rev:meanings[i].rev
+    });
+  }
+  for(let i=0;i<4;i++){
+    const m = meanings[10+i];
+    MINOR_ARCANA.push({
+      id:idCounter++, suit:suit.key, shape:suit.shape,
+      n:suit.label, name:COURT_NAMES[i]+' '+suit.label,
+      up:m.up, rev:m.rev
+    });
+  }
+});
+
+const FULL_DECK = MAJOR_ARCANA.concat(MINOR_ARCANA);
+
+const CELTIC_LABELS = ['Situacija','Izazov','Temelj','Prošlost','Mogući ishod','Bliska budućnost','Tvoj stav','Okolina','Nade i strahovi','Konačni ishod'];
+const THREE_LABELS = ['Prošlost','Sadašnjost','Budućnost'];
+
+/* ---------- Zvezdice ---------- */
+function buildStars(){
+  const wrap = document.getElementById('stars');
+  let html = '';
+  for(let i=0;i<90;i++){
+    const size = (Math.random()*2 + 1).toFixed(1);
+    const top = (Math.random()*100).toFixed(2);
+    const left = (Math.random()*100).toFixed(2);
+    const delay = (Math.random()*3.5).toFixed(2);
+    const duration = (2.5 + Math.random()*3).toFixed(2);
+    html += `<div class="star" style="width:${size}px;height:${size}px;top:${top}%;left:${left}%;animation-delay:${delay}s;animation-duration:${duration}s;"></div>`;
+  }
+  wrap.innerHTML = html;
+}
+buildStars();
+
+/* ---------- Sigile (simboli na kartama) ---------- */
+function sigilMajor(id){
+  const points = 5 + (id % 4);
+  const pts = [];
+  for(let i=0;i<points;i++){
+    const angle = (Math.PI * 2 * i / points) - Math.PI/2;
+    const r = (i % 2 === 0) ? 40 : 18 + (id % 5) * 2;
+    pts.push((44 + r*Math.cos(angle)).toFixed(1) + ',' + (44 + r*Math.sin(angle)).toFixed(1));
+  }
+  const dotAngle = (id * 23 % 360) * Math.PI/180;
+  const dx = (44 + 34*Math.cos(dotAngle)).toFixed(1);
+  const dy = (44 + 34*Math.sin(dotAngle)).toFixed(1);
+  return `<svg viewBox="0 0 88 88"><circle cx="44" cy="44" r="41" fill="none" stroke="#1f9fc4" stroke-width="0.6" opacity="0.5"/><polygon points="${pts.join(' ')}" fill="none" stroke="#3ce3ff" stroke-width="1.1"/><circle cx="44" cy="44" r="3" fill="#3ce3ff"/><circle cx="${dx}" cy="${dy}" r="2" fill="#e9e2d3"/></svg>`;
+}
+function sigilMinor(shape, id){
+  const rot = (id*37)%40-20;
+  if(shape==='circle'){
+    return `<svg viewBox="0 0 88 88"><circle cx="44" cy="44" r="30" fill="none" stroke="#3ce3ff" stroke-width="1.1"/><circle cx="44" cy="44" r="17" fill="none" stroke="#1f9fc4" stroke-width="0.8"/><circle cx="44" cy="44" r="3" fill="#3ce3ff"/></svg>`;
+  }
+  if(shape==='triangle'){
+    return `<svg viewBox="0 0 88 88"><polygon points="44,10 74,70 14,70" fill="none" stroke="#3ce3ff" stroke-width="1.1" transform="rotate(${rot} 44 44)"/><circle cx="44" cy="44" r="2.4" fill="#3ce3ff"/></svg>`;
+  }
+  if(shape==='line'){
+    return `<svg viewBox="0 0 88 88"><line x1="18" y1="18" x2="70" y2="70" stroke="#3ce3ff" stroke-width="1.2"/><line x1="70" y1="18" x2="18" y2="70" stroke="#1f9fc4" stroke-width="1.2"/><circle cx="44" cy="44" r="3" fill="#3ce3ff"/></svg>`;
+  }
+  const pts=[]; for(let i=0;i<5;i++){const a=(Math.PI*2*i/5)-Math.PI/2; pts.push((44+30*Math.cos(a)).toFixed(1)+','+(44+30*Math.sin(a)).toFixed(1));}
+  return `<svg viewBox="0 0 88 88"><polygon points="${pts.join(' ')}" fill="none" stroke="#3ce3ff" stroke-width="1.1"/><circle cx="44" cy="44" r="3" fill="#3ce3ff"/></svg>`;
+}
+function sigilFor(card){ return card.suit==='major' ? sigilMajor(card.id) : sigilMinor(card.shape, card.id); }
+
+/* ---------- Zvuk ---------- */
+let audioCtx=null, ambientNodes=null, soundOn=false, reverbNode=null;
+function createReverb(){
+  const length = audioCtx.sampleRate * 2.2;
+  const impulse = audioCtx.createBuffer(2, length, audioCtx.sampleRate);
+  for(let ch=0; ch<2; ch++){
+    const data = impulse.getChannelData(ch);
+    for(let i=0;i<length;i++){
+      data[i] = (Math.random()*2-1) * Math.pow(1 - i/length, 2.6);
+    }
+  }
+  const convolver = audioCtx.createConvolver();
+  convolver.buffer = impulse;
+  const wetGain = audioCtx.createGain();
+  wetGain.gain.value = 0.5;
+  convolver.connect(wetGain);
+  wetGain.connect(audioCtx.destination);
+  return convolver;
+}
+function ensureAudio(){
+  if(audioCtx) return;
+  audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  reverbNode = createReverb();
+}
+function playSwoosh(){
+  if(!soundOn) return;
+  ensureAudio();
+  const t = audioCtx.currentTime;
+  const notes = [440, 523.25, 659.25];
+  notes.forEach((freq, i)=>{
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    const start = t + i*0.055;
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.13, start+0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start+1.2);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    gain.connect(reverbNode);
+    osc.start(start);
+    osc.stop(start+1.3);
+  });
+}
+function startAmbient(){
+  ensureAudio();
+  if(ambientNodes) return;
+  const master = audioCtx.createGain(); master.gain.value = 0.05;
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'lowpass'; filter.frequency.value = 700;
+  master.connect(filter);
+  filter.connect(audioCtx.destination);
+  filter.connect(reverbNode);
+
+  const oscs = [];
+  [110, 164.81, 220].forEach(f=>{
+    [-4,4].forEach(detune=>{
+      const o = audioCtx.createOscillator();
+      o.type = 'sine'; o.frequency.value = f; o.detune.value = detune;
+      const g = audioCtx.createGain(); g.gain.value = 0.25;
+      o.connect(g); g.connect(master);
+      o.start();
+      oscs.push(o);
+    });
+  });
+  const lfo = audioCtx.createOscillator();
+  lfo.frequency.value = 0.045;
+  const lfoGain = audioCtx.createGain();
+  lfoGain.gain.value = 260;
+  lfo.connect(lfoGain);
+  lfoGain.connect(filter.frequency);
+  lfo.start();
+  oscs.push(lfo);
+
+  ambientNodes = {master, filter, oscs};
+}
+function stopAmbient(){
+  if(!ambientNodes) return;
+  ambientNodes.oscs.forEach(o=>{ try{ o.stop(); }catch(e){} });
+  ambientNodes.master.disconnect();
+  ambientNodes.filter.disconnect();
+  ambientNodes = null;
+}
+document.getElementById('sound-btn').addEventListener('click', (e)=>{
+  soundOn=!soundOn;
+  e.target.textContent = soundOn ? '🔊 Zvuk uključen' : '🔈 Zvuk isključen';
+  e.target.classList.toggle('active', soundOn);
+  if(soundOn){ ensureAudio(); if(audioCtx.state==='suspended') audioCtx.resume(); startAmbient(); }
+  else stopAmbient();
+});
+
+/* ---------- Stanje ---------- */
+let mode = 1; // 1, 3, 10, 'daily'
+let lastSingleDraw = null;
+const history = [];
+let lastDailyKey = null;
+
+const tableEl = document.getElementById('table');
+const readingEl = document.getElementById('reading');
+const hintEl = document.getElementById('hint');
+const drawBtn = document.getElementById('draw-btn');
+const downloadBtn = document.getElementById('download-btn');
+const historyWrap = document.getElementById('history-wrap');
+const historyChips = document.getElementById('history-chips');
+
+function modeCount(){ return mode==='daily' ? 1 : mode; }
+
+function buildSlots(){
+  tableEl.innerHTML = '';
+  readingEl.innerHTML = '';
+  readingEl.classList.remove('show');
+  hintEl.textContent = '';
+  downloadBtn.classList.remove('show');
+  const count = modeCount();
+
+  if(mode === 10){
+    tableEl.className = 'celtic-grid';
+    for(let i=1;i<=10;i++){
+      const wrap = document.createElement('div');
+      wrap.className = 'slot pos-'+i;
+      const label = document.createElement('div');
+      label.className = 'slot-label';
+      label.textContent = i===2 ? '' : (i<=10 ? CELTIC_LABELS[i-1] : '');
+      const card = document.createElement('div');
+      card.className = 'card mini pos-'+i;
+      card.dataset.index = i-1;
+      card.innerHTML = `<div class="card-inner"><div class="card-face card-back"><div class="moon"></div></div><div class="card-face card-front"></div></div>`;
+      wrap.appendChild(label);
+      wrap.appendChild(card);
+      tableEl.appendChild(wrap);
+    }
+  } else {
+    tableEl.className = 'table';
+    for(let i=0;i<count;i++){
+      const slot = document.createElement('div');
+      slot.className = 'slot';
+      const label = document.createElement('div');
+      label.className = 'slot-label';
+      label.textContent = mode === 3 ? THREE_LABELS[i] : '';
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.index = i;
+      card.innerHTML = `<div class="card-inner"><div class="card-face card-back"><div class="moon"></div></div><div class="card-face card-front"></div></div>`;
+      slot.appendChild(label);
+      slot.appendChild(card);
+      tableEl.appendChild(slot);
+    }
+  }
+
+  if(mode === 'daily'){
+    drawBtn.textContent = 'Prikaži kartu dana';
+    hintEl.textContent = 'Ista karta se prikazuje ceo dan.';
+  } else {
+    drawBtn.textContent = count > 1 ? 'Izvuci karte' : 'Izvuci kartu';
+  }
+}
+
+function shuffledDeck(){
+  const idx = FULL_DECK.map((_,i)=>i);
+  for(let i=idx.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [idx[i],idx[j]]=[idx[j],idx[i]];
+  }
+  return idx;
+}
+
+function dailyPick(){
+  const d = new Date();
+  const key = d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+  let hash = 0;
+  for(let i=0;i<key.length;i++) hash = (hash*31 + key.charCodeAt(i)) >>> 0;
+  return { card: FULL_DECK[hash % FULL_DECK.length], reversed: (hash % 2)===1, key };
+}
+
+function renderReadingHeader(){
+  const q = document.getElementById('question').value.trim();
+  readingEl.innerHTML = '';
+  if(q){
+    const p = document.createElement('p');
+    p.className = 'reading-question';
+    p.textContent = 'Pitanje: ' + q;
+    readingEl.appendChild(p);
+  }
+}
+
+function addReadingCard(card, reversed, label){
+  const rc = document.createElement('div');
+  rc.className = 'reading-card';
+  rc.style.opacity = '0';
+  rc.style.transition = 'opacity .6s ease';
+  rc.innerHTML = `
+    <p class="reading-title">${label ? '<span class="pos">'+label+'</span>' : ''}${card.name} ${reversed ? '(obrnuto)' : ''}</p>
+    <p class="reading-text">${reversed ? card.rev : card.up}</p>
+  `;
+  readingEl.appendChild(rc);
+  requestAnimationFrame(()=>{ rc.style.opacity='1'; });
+  readingEl.classList.add('show');
+}
+
+function pushHistory(entries, tag){
+  entries.forEach(e=>{
+    history.unshift({name:e.card.name, reversed:e.reversed, tag});
+  });
+  renderHistory();
+}
+function renderHistory(){
+  if(history.length===0){ historyWrap.style.display='none'; return; }
+  historyWrap.style.display='flex';
+  historyChips.innerHTML = history.slice(0,30).map(h=>
+    `<span class="chip">${h.name} ${h.reversed?'↩':''} · ${h.tag}</span>`
+  ).join('');
+}
+document.getElementById('clear-history').addEventListener('click', ()=>{
+  history.length = 0;
+  renderHistory();
+});
+
+function drawCards(){
+  if(mode === 'daily'){
+    const {card, reversed, key} = dailyPick();
+    renderReadingHeader();
+    const cardEl = tableEl.querySelector('.card');
+    cardEl.classList.remove('flipped');
+    const front = cardEl.querySelector('.card-front');
+    front.className = 'card-front' + (reversed ? ' reversed' : '');
+    front.innerHTML = `
+      <div class="numeral">${card.n}</div>
+      <div class="sigil-wrap">${sigilFor(card)}</div>
+      <div class="card-name">${card.name}</div>
+      <div class="orientation-tag">${reversed ? 'obrnuto' : 'uspravno'}</div>
+    `;
+    requestAnimationFrame(()=> cardEl.classList.add('flipped'));
+    playSwoosh();
+    addReadingCard(card, reversed, null);
+    lastSingleDraw = {card, reversed};
+    downloadBtn.classList.add('show');
+    if(lastDailyKey !== key){
+      lastDailyKey = key;
+      pushHistory([{card, reversed}], 'dan');
+    }
+    return;
+  }
+
+  const count = modeCount();
+  const deckIdx = shuffledDeck();
+  const drawn = deckIdx.slice(0, count).map(idx => ({ card: FULL_DECK[idx], reversed: Math.random() < 0.5 }));
+
+  renderReadingHeader();
+  const cardEls = tableEl.querySelectorAll('.card');
+  cardEls.forEach(el=>{
+    el.classList.remove('flipped');
+    const front = el.querySelector('.card-front');
+    front.innerHTML = '';
+    front.className = 'card-front';
+  });
+
+  drawBtn.disabled = true;
+  downloadBtn.classList.remove('show');
+
+  drawn.forEach((d, i) => {
+    setTimeout(() => {
+      const el = cardEls[i];
+      const front = el.querySelector('.card-front');
+      if(d.reversed) front.classList.add('reversed');
+      front.innerHTML = `
+        <div class="numeral">${d.card.n}</div>
+        <div class="sigil-wrap">${sigilFor(d.card)}</div>
+        <div class="card-name">${d.card.name}</div>
+        <div class="orientation-tag">${d.reversed ? 'obrnuto' : 'uspravno'}</div>
+      `;
+      el.classList.add('flipped');
+      playSwoosh();
+
+      const label = mode===3 ? THREE_LABELS[i] : (mode===10 ? CELTIC_LABELS[i] : null);
+      addReadingCard(d.card, d.reversed, label);
+
+      if(i === drawn.length - 1){
+        setTimeout(()=>{ drawBtn.disabled = false; }, 300);
+        if(count === 1){ lastSingleDraw = drawn[0]; downloadBtn.classList.add('show'); }
+        pushHistory(drawn, count===1 ? '1 karta' : (count===3 ? '3 karte' : 'keltski krst'));
+      }
+    }, i * 320);
+  });
+}
+
+drawBtn.addEventListener('click', drawCards);
+
+document.querySelectorAll('.mode-toggle button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.mode-toggle button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const m = btn.dataset.mode;
+    mode = (m==='daily') ? 'daily' : parseInt(m,10);
+    buildSlots();
+  });
+});
+
+/* ---------- Preuzimanje kartice kao slike ---------- */
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight){
+  const words = text.split(' ');
+  let line = '';
+  for(let n=0;n<words.length;n++){
+    const test = line + words[n] + ' ';
+    if(ctx.measureText(test).width > maxWidth && n>0){
+      ctx.fillText(line, x, y);
+      line = words[n] + ' ';
+      y += lineHeight;
+    } else { line = test; }
+  }
+  ctx.fillText(line, x, y);
+}
+downloadBtn.addEventListener('click', ()=>{
+  if(!lastSingleDraw) return;
+  const {card, reversed} = lastSingleDraw;
+  const canvas = document.createElement('canvas');
+  canvas.width = 500; canvas.height = 800;
+  const ctx = canvas.getContext('2d');
+  const grad = ctx.createLinearGradient(0,0,0,800);
+  grad.addColorStop(0,'#221b3a'); grad.addColorStop(1,'#0f0c1a');
+  ctx.fillStyle = grad; ctx.fillRect(0,0,500,800);
+  ctx.strokeStyle = '#3ce3ff'; ctx.lineWidth = 4; ctx.strokeRect(20,20,460,760);
+  ctx.strokeStyle = 'rgba(60,227,255,.4)'; ctx.lineWidth = 1; ctx.strokeRect(34,34,432,732);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#1f9fc4';
+  ctx.font = 'italic 24px Georgia';
+  ctx.fillText(card.n, 250, 110);
+  ctx.fillStyle = '#e9e2d3';
+  ctx.font = 'bold 40px Georgia';
+  ctx.fillText(card.name, 250, 175);
+  ctx.fillStyle = '#3ce3ff';
+  ctx.font = 'italic 22px Georgia';
+  ctx.fillText(reversed ? 'obrnuto' : 'uspravno', 250, 215);
+  ctx.beginPath();
+  ctx.arc(250, 330, 60, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(60,227,255,.5)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.fillStyle = '#b8b0a0';
+  ctx.font = '19px Georgia';
+  wrapCanvasText(ctx, reversed ? card.rev : card.up, 250, 470, 380, 30);
+  const link = document.createElement('a');
+  link.download = card.name.replace(/\s+/g,'_') + '.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+});
+
+buildSlots();
+</script>
+</body>
+</html>
